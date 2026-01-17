@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Transaction } from '@/types/transaction';
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TransactionDetailModal } from './TransactionDetailModal';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -44,6 +45,7 @@ const ConfidenceIndicator = ({ score }: { score: number }) => {
 export const TransactionTable = ({ transactions, filterType, onClearFilter }: TransactionTableProps) => {
   const [sortField, setSortField] = useState<'txn_date' | 'balance'>('txn_date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const filteredTransactions = transactions.filter(txn => {
     if (!filterType) return true;
@@ -71,6 +73,15 @@ export const TransactionTable = ({ transactions, filterType, onClearFilter }: Tr
   const SortIcon = ({ field }: { field: 'txn_date' | 'balance' }) => {
     if (sortField !== field) return null;
     return sortDir === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />;
+  };
+
+  const getPreviousBalance = (txn: Transaction): number | null => {
+    const sortedByDate = [...transactions].sort((a, b) => 
+      new Date(a.txn_date).getTime() - new Date(b.txn_date).getTime()
+    );
+    const currentIndex = sortedByDate.findIndex(t => t.id === txn.id);
+    if (currentIndex <= 0) return null;
+    return sortedByDate[currentIndex - 1].balance;
   };
 
   return (
@@ -134,9 +145,10 @@ export const TransactionTable = ({ transactions, filterType, onClearFilter }: Tr
               <tr 
                 key={txn.id} 
                 className={cn(
-                  'data-table-row',
+                  'data-table-row cursor-pointer',
                   txn.is_flagged && 'flagged'
                 )}
+                onClick={() => setSelectedTransaction(txn)}
               >
                 <td className="px-6 py-4">
                   {txn.is_flagged ? (
@@ -167,13 +179,22 @@ export const TransactionTable = ({ transactions, filterType, onClearFilter }: Tr
                   {formatCurrency(txn.balance)}
                 </td>
                 <td className="px-6 py-4">
-                  <ConfidenceIndicator score={txn.confidence_score} />
+                  <div className="flex items-center gap-2">
+                    <ConfidenceIndicator score={txn.confidence_score} />
+                    <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <TransactionDetailModal 
+        transaction={selectedTransaction}
+        previousBalance={selectedTransaction ? getPreviousBalance(selectedTransaction) : null}
+        onClose={() => setSelectedTransaction(null)}
+      />
     </div>
   );
 };

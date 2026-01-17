@@ -5,6 +5,7 @@ import { TransactionTable } from '@/components/TransactionTable';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { ExportPanel } from '@/components/ExportPanel';
 import { DeleteDataButton } from '@/components/DeleteDataButton';
+import { MonthlyTrendsChart } from '@/components/MonthlyTrendsChart';
 import { useSession } from '@/hooks/useSession';
 import { generateMockTransactions } from '@/data/mockTransactions';
 import { Transaction, UploadState } from '@/types/transaction';
@@ -154,6 +155,9 @@ const Index = () => {
               transactions={transactions} 
               onFilterChange={setFilterType}
             />
+
+            {/* Monthly Trends Chart */}
+            <MonthlyTrendsChart transactions={transactions} />
 
             {/* Transaction Table */}
             <div>
