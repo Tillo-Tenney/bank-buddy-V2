@@ -391,11 +391,19 @@ const mappedTransactions: Transaction[] = data.transactions.map((t: any) => {
             {/* Transaction Table */}
             <div>
               <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
-              <TransactionTable 
-                transactions={transactions}
-                filterType={filterType}
-                onClearFilter={() => setFilterType(null)}
-              />
+
+              {/* MODIFIED: Wrapped Table in fixed-height scrollable container */}
+
+              <div className="rounded-xl border border-border bg-card h-[450px] overflow-auto shadow-sm">
+                
+                <TransactionTable 
+                  transactions={transactions}
+                  filterType={filterType}
+                  onClearFilter={() => setFilterType(null)}
+                />
+
+              </div>
+
             </div>
 
             {/* Export Panel */}

@@ -1,0 +1,66 @@
+1. https://convertmybankstatement.com/
+
+Add the below mentioned features into existing system without breaking it and only modify if it manditory to introduce below mentioned features. I want all existing features, functionalities etc after these newly added features.
+1. Allow Multiple bank statements PDFs in upload space
+2. Allow to process Password Protected Statement. It will prompt text field for password once correct password provide then proceed further.
+3. Build cash flow projections based on historical patterns
+4. Implement batch row selection with bulk actions like flagging or exporting selected transactions.
+
+i) Allow Multiple same bank statements PDFs in to a Single consolidated extraction.
+
+ii) Convert Password Protected Statement.
+
+iii) Automatic Reconciliation with your Balance
+
+iv) Data encryption ex(256 bit)
+
+v) Categorize transactions automatically using Excel formulas
+
+vi) Create monthly expense summaries and trending reports
+
+vii) Build cash flow projections based on historical patterns
+
+viii) Identify unusual transactions or potential fraud more easily
+
+ix) Prepare data for tax filing or audit purposes
+
+x) Import clean data into QuickBooks, Xero, or other accounting systems
+
+xi) (4CPU, 2RAM), (6CPU, 3RAM), (8CPU, 4RAM)
+
+xii) Copy clipboard option
+
+xiii) Selecting tables manually by draging cursir on specific part of pdf
+
+xiv) Forecast (incl. funding planner)
+Customizable weekly and monthly forecasts, unlimited scenarios
+
+xv) Comprehensive cash flow analysis in real time: Operational cash flow, transaction drill-down, efficiency metrics, and in-depth reporting.
+
+xvi) After conversion show the sample but for further ask them to share mail to subscribe our newsshelter like recap-bank-staement-converter site
+
+i) Full access to all iLovePDF tools
+
+ii) Unlimited document processing
+
+iii) Access across Web, Mobile, and Desktop
+
+iv) Digital Signatures
+
+v) Workflows
+
+vi) Ad-free experience
+
+vii) Priority customer support
+
+viii) All Premium features
+
+ix) Custom contracts designed for scalability
+
+x) Dedicated Account Manager
+
+xi) Single Sign On (SSO)
+
+xii) Regional file processing
+
+2. https://bankstatementconverter.com/
