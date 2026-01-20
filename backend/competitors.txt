@@ -1,3 +1,5 @@
+Need to add column for the bank name with respective transaction records from pdf.
+
 1. https://convertmybankstatement.com/
 
 Add the below mentioned features into existing system without breaking it and only modify if it manditory to introduce below mentioned features. I want all existing features, functionalities etc after these newly added features.
