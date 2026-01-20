@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Transaction, AnalyticsSummary } from '@/types/transaction';
 import { MetricCard } from './MetricCard';
-import { TrendingUp, TrendingDown, ArrowUpDown, AlertTriangle, FileCheck, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowUpDown, AlertTriangle, FileCheck, Calendar, LineChart } from 'lucide-react';
 
 interface AnalyticsDashboardProps {
   transactions: Transaction[];
@@ -18,7 +18,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export const AnalyticsDashboard = ({ transactions, onFilterChange }: AnalyticsDashboardProps) => {
-  const analytics: AnalyticsSummary = useMemo(() => {
+  const analytics = useMemo(() => {
     const totalCredit = transactions.reduce((sum, t) => sum + (t.credit_amount || 0), 0);
     const totalDebit = transactions.reduce((sum, t) => sum + (t.debit_amount || 0), 0);
     const netCashFlow = totalCredit - totalDebit;
@@ -29,6 +29,10 @@ export const AnalyticsDashboard = ({ transactions, onFilterChange }: AnalyticsDa
       { amount: 0, date: '', description: '' }
     );
 
+    // Feature 3: Cash Flow Projections Logic
+    const uniqueMonths = new Set(transactions.map(t => t.txn_date.substring(0, 7))).size || 1;
+    const avgMonthlyNet = netCashFlow / uniqueMonths;
+
     return {
       totalCredit,
       totalDebit,
@@ -36,6 +40,7 @@ export const AnalyticsDashboard = ({ transactions, onFilterChange }: AnalyticsDa
       highestDebit,
       rowCount: transactions.length,
       flaggedCount: transactions.filter(t => t.is_flagged).length,
+      projectedNextMonth: avgMonthlyNet
     };
   }, [transactions]);
 
@@ -66,15 +71,24 @@ export const AnalyticsDashboard = ({ transactions, onFilterChange }: AnalyticsDa
           trend={analytics.netCashFlow >= 0 ? 'positive' : 'negative'}
         />
         
+        {/* Feature 3: Projection Card */}
+        <MetricCard
+          title="Projected Flow (Next Mo)"
+          value={formatCurrency(analytics.projectedNextMonth)}
+          subtitle="Based on historical averages"
+          icon={<LineChart className="w-5 h-5" />}
+          trend={analytics.projectedNextMonth >= 0 ? 'positive' : 'negative'}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
         <MetricCard
           title="Highest Debit"
           value={formatCurrency(analytics.highestDebit.amount)}
           subtitle={analytics.highestDebit.date ? new Date(analytics.highestDebit.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '-'}
           icon={<Calendar className="w-5 h-5" />}
         />
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <MetricCard
           title="Transactions Processed"
           value={analytics.rowCount.toString()}
@@ -85,7 +99,7 @@ export const AnalyticsDashboard = ({ transactions, onFilterChange }: AnalyticsDa
         <MetricCard
           title="Flagged Transactions"
           value={analytics.flaggedCount.toString()}
-          subtitle={`${((analytics.flaggedCount / analytics.rowCount) * 100).toFixed(1)}% of total`}
+          subtitle={analytics.rowCount > 0 ? `${((analytics.flaggedCount / analytics.rowCount) * 100).toFixed(1)}% of total` : '0%'}
           icon={<AlertTriangle className="w-5 h-5" />}
           trend={analytics.flaggedCount > 0 ? 'negative' : 'positive'}
           onClick={() => onFilterChange('flagged')}

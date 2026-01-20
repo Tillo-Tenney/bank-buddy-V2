@@ -5,9 +5,7 @@
 // import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 // import { ExportPanel } from '@/components/ExportPanel';
 // import { DeleteDataButton } from '@/components/DeleteDataButton';
-// // import { MonthlyTrendsChart } from '@/components/MonthlyTrendsChart';
 // import { useSession } from '@/hooks/useSession';
-// import { generateMockTransactions } from '@/data/mockTransactions';
 // import { Transaction, UploadState } from '@/types/transaction';
 // import { FileText, AlertTriangle } from 'lucide-react';
 
@@ -25,18 +23,75 @@
 //     error: null,
 //   });
 
+//   // Update timer every second instead of every minute for immediate updates
 //   useEffect(() => {
-//     const interval = setInterval(() => {
+//     const updateTimer = () => {
 //       setTimeRemaining(getTimeRemaining());
-//     }, 60000);
+//     };
+    
+//     updateTimer(); // Initial update
+//     const interval = setInterval(updateTimer, 1000); // Update every second
+    
 //     return () => clearInterval(interval);
 //   }, [getTimeRemaining]);
 
-//   const handleUploadComplete = (detectedBank: 'SBI' | 'SIB') => {
-//     setBank(detectedBank);
-//     const mockData = generateMockTransactions(detectedBank, sessionId);
-//     setTransactions(mockData);
-//   };
+//   // const handleUploadComplete = (data: any) => {
+//   //   setBank(data.bank);
+
+//   //   const mappedTransactions: Transaction[] = data.transactions.map((t: any) => {
+//   //     // Normalize date from DD/MM/YYYY or DD-MM-YY to ISO YYYY-MM-DD
+//   //     const [d, m, y] = t.txn_date.replace(/-/g, '/').split('/');
+//   //     const fullYear = y.length === 2 ? `20${y}` : y;
+//   //     const isoDate = `${fullYear}-${m}-${d}`;
+
+//   //     return {
+//   //       id: `${data.fileName || 'upload'}_${t.id}`,
+//   //       txn_date: isoDate,
+//   //       description: t.description,
+//   //       debit_amount: t.debit,
+//   //       credit_amount: t.credit,
+//   //       balance: t.balance,
+//   //       confidence_score: t.confidence || 1.0,
+//   //       is_flagged: t.is_flagged,
+//   //       bank_source: data.bank,
+//   //       session_id: sessionId
+//   //     };
+//   //   });
+
+//   //   setTransactions(prev => [...prev, ...mappedTransactions]);
+//   // };
+
+//   const handleUploadComplete = (data: any) => {
+//   setBank(data.bank);
+
+//   const mappedTransactions: Transaction[] = data.transactions.map((t: any, index: number) => {
+//     // Normalize date from DD/MM/YYYY or DD-MM-YY to ISO YYYY-MM-DD
+//     const [d, m, y] = t.txn_date.replace(/-/g, '/').split('/');
+//     const fullYear = y.length === 2 ? `20${y}` : y;
+//     const isoDate = `${fullYear}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+
+//     return {
+//       // Ensure unique ID with timestamp to prevent collisions
+//       id: `${data.fileName || 'upload'}_${Date.now()}_${index}`,
+//       txn_date: isoDate,
+//       description: String(t.description || ''),
+//       // Ensure these are numbers, not strings
+//       debit_amount: typeof t.debit === 'number' ? t.debit : (t.debit ? parseFloat(t.debit) : null),
+//       credit_amount: typeof t.credit === 'number' ? t.credit : (t.credit ? parseFloat(t.credit) : null),
+//       balance: typeof t.balance === 'number' ? t.balance : parseFloat(t.balance),
+//       confidence_score: typeof t.confidence === 'number' ? t.confidence : parseFloat(t.confidence || '1.0'),
+//       is_flagged: Boolean(t.is_flagged),
+//       bank_source: data.bank,
+//       session_id: sessionId
+//     };
+//   });
+
+//   console.log('[UPLOAD] Mapped transactions:', mappedTransactions.length);
+//   console.log('[UPLOAD] Sample mapped transaction:', mappedTransactions[0]);
+
+//   // Append to existing transactions
+//   setTransactions(prev => [...prev, ...mappedTransactions]);
+// };
 
 //   const handleDeleteData = () => {
 //     setTransactions([]);
@@ -49,7 +104,8 @@
 //       bank: null,
 //       error: null,
 //     });
-//     clearSession();
+//     clearSession(); // This already resets the timer
+//     setTimeRemaining(60); // Immediately update the display
 //   };
 
 //   const hasData = transactions.length > 0;
@@ -125,7 +181,7 @@
 //             <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-muted-foreground">
 //               <div className="flex items-center gap-2">
 //                 <AlertTriangle className="w-4 h-4" />
-//                 <span>Password-protected PDFs not supported (MVP)</span>
+//                 <span>Password-protected PDFs supported</span>
 //               </div>
 //               <div className="flex items-center gap-2">
 //                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -156,17 +212,16 @@
 //               onFilterChange={setFilterType}
 //             />
 
-//             {/* Monthly Trends Chart */}
-//             {/* <MonthlyTrendsChart transactions={transactions} /> */}
-
 //             {/* Transaction Table */}
 //             <div>
 //               <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
-//               <TransactionTable 
-//                 transactions={transactions}
-//                 filterType={filterType}
-//                 onClearFilter={() => setFilterType(null)}
-//               />
+//               <div className="rounded-xl border border-border bg-card h-[600px] overflow-auto shadow-sm">
+//                 <TransactionTable 
+//                   transactions={transactions}
+//                   filterType={filterType}
+//                   onClearFilter={() => setFilterType(null)}
+//                 />
+//               </div>
 //             </div>
 
 //             {/* Export Panel */}
@@ -193,11 +248,6 @@
 
 
 
-
-
-
-
-
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { UploadZone } from '@/components/UploadZone';
@@ -205,9 +255,7 @@ import { TransactionTable } from '@/components/TransactionTable';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { ExportPanel } from '@/components/ExportPanel';
 import { DeleteDataButton } from '@/components/DeleteDataButton';
-// import { MonthlyTrendsChart } from '@/components/MonthlyTrendsChart';
 import { useSession } from '@/hooks/useSession';
-// import { generateMockTransactions } from '@/data/mockTransactions'; // No longer needed
 import { Transaction, UploadState } from '@/types/transaction';
 import { FileText, AlertTriangle } from 'lucide-react';
 
@@ -225,46 +273,45 @@ const Index = () => {
     error: null,
   });
 
+  // TIMER FIX: Update every second for real-time countdown
   useEffect(() => {
-    const interval = setInterval(() => {
+    const updateTimer = () => {
       setTimeRemaining(getTimeRemaining());
-    }, 60000);
+    };
+    
+    updateTimer(); // Initial update
+    const interval = setInterval(updateTimer, 1000); // Update every second
+    
     return () => clearInterval(interval);
   }, [getTimeRemaining]);
 
-  // CHANGED: Now accepts the full data object from UploadZone
   const handleUploadComplete = (data: any) => {
     setBank(data.bank);
 
-    // Map Backend Data to Frontend Transaction Interface
-    // Backend returns: { debit: number, credit: number, confidence: number ... }
-    // Frontend expects: { debit_amount: number, credit_amount: number, confidence_score: number ... }
-    
-const mappedTransactions: Transaction[] = data.transactions.map((t: any) => {
-
-      // FIX: Normalize date from DD/MM/YYYY or DD-MM-YY to ISO YYYY-MM-DD
-      // This prevents the frontend from misinterpreting 01/10 as Jan 10th instead of Oct 1st
-
+    const mappedTransactions: Transaction[] = data.transactions.map((t: any, index: number) => {
+      // Normalize date from DD/MM/YYYY or DD-MM-YY to ISO YYYY-MM-DD
       const [d, m, y] = t.txn_date.replace(/-/g, '/').split('/');
       const fullYear = y.length === 2 ? `20${y}` : y;
-      const isoDate = `${fullYear}-${m}-${d}`;
+      const isoDate = `${fullYear}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 
       return {
-        id: t.id.toString(),
-        txn_date: isoDate, // Use normalized ISO date
-        description: t.description,
-        debit_amount: t.debit,
-        credit_amount: t.credit, //mapping
-        balance: t.balance, //mapping
-        confidence_score: t.confidence || 1.0, //mapping & credit
-        is_flagged: t.is_flagged,
+        // Ensure unique ID with timestamp to prevent collisions
+        id: `${data.fileName || 'upload'}_${Date.now()}_${index}`,
+        txn_date: isoDate,
+        description: String(t.description || ''),
+        // SORTING FIX: Ensure these are numbers, not strings
+        debit_amount: typeof t.debit === 'number' ? t.debit : (t.debit ? parseFloat(t.debit) : null),
+        credit_amount: typeof t.credit === 'number' ? t.credit : (t.credit ? parseFloat(t.credit) : null),
+        balance: typeof t.balance === 'number' ? t.balance : parseFloat(t.balance),
+        confidence_score: typeof t.confidence === 'number' ? t.confidence : parseFloat(t.confidence || '1.0'),
+        is_flagged: Boolean(t.is_flagged),
         bank_source: data.bank,
         session_id: sessionId
       };
-
     });
 
-    setTransactions(mappedTransactions);
+    // Append to existing transactions
+    setTransactions(prev => [...prev, ...mappedTransactions]);
   };
 
   const handleDeleteData = () => {
@@ -278,7 +325,8 @@ const mappedTransactions: Transaction[] = data.transactions.map((t: any) => {
       bank: null,
       error: null,
     });
-    clearSession();
+    clearSession(); // Resets the session timer
+    setTimeRemaining(60); // TIMER FIX: Immediately update the display to 60
   };
 
   const hasData = transactions.length > 0;
@@ -354,7 +402,7 @@ const mappedTransactions: Transaction[] = data.transactions.map((t: any) => {
             <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
-                <span>Password-protected PDFs not supported (MVP)</span>
+                <span>Password-protected PDFs supported</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -385,25 +433,16 @@ const mappedTransactions: Transaction[] = data.transactions.map((t: any) => {
               onFilterChange={setFilterType}
             />
 
-            {/* Monthly Trends Chart */}
-            {/* <MonthlyTrendsChart transactions={transactions} /> */}
-
             {/* Transaction Table */}
             <div>
               <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
-
-              {/* MODIFIED: Wrapped Table in fixed-height scrollable container */}
-
-              <div className="rounded-xl border border-border bg-card h-[450px] overflow-auto shadow-sm">
-                
+              <div className="rounded-xl border border-border bg-card h-[600px] overflow-auto shadow-sm">
                 <TransactionTable 
                   transactions={transactions}
                   filterType={filterType}
                   onClearFilter={() => setFilterType(null)}
                 />
-
               </div>
-
             </div>
 
             {/* Export Panel */}
