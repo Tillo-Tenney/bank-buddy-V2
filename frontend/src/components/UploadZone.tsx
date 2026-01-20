@@ -449,6 +449,8 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
   const [fileQueue, setFileQueue] = useState<FileQueueItem[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState(-1);
   const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
@@ -717,7 +719,7 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
                   </p>
                   <div className="flex gap-2">
                     <input 
-                      type="password" 
+                      type={showPassword ? "text" : "password"}// type="password" 
                       value={passwordInput}
                       onChange={(e) => setPasswordInput(e.target.value)}
                       placeholder="PDF Password"
@@ -725,6 +727,17 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
                       onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
                       autoFocus
                     />
+                    
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      className="px-2 rounded-md border border-input bg-background text-sm"
+                      aria-label="Toggle password visibility"
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? "🙈" : "👁"}
+                    </button>
+
                     <button 
                       onClick={handlePasswordSubmit}
                       disabled={!passwordInput}
