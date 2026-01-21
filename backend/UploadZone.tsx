@@ -47,122 +47,122 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
   }, [fileQueue.length]);
 
   useEffect(() => {
-    if (fileQueue.length === 0 && currentFileIndex !== -1) {
-      setCurrentFileIndex(-1);
-      setPasswordInput('');
-      setShowPassword(false);
-    }
-  }, [fileQueue.length, currentFileIndex]);
+  if (fileQueue.length === 0 && currentFileIndex !== -1) {
+    setCurrentFileIndex(-1);
+    setPasswordInput('');
+    setShowPassword(false);
+  }
+}, [fileQueue.length, currentFileIndex]);
 
 
-  const processFile = useCallback(async (file: File, filePassword?: string): Promise<{status: 'success' | 'needs-password' | 'error', data?: BackendResponse, error?: string}> => {
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      const errorMsg = 'Only PDF files are accepted.';
-      setTimeout(() => {
-        setUploadState({
-          status: 'error',
-          progress: 0,
-          fileName: file.name,
-          bank: null,
-          error: errorMsg,
-        });
-      }, 0);
-      return { status: 'error', error: errorMsg };
-    }
+  const processFile = useCallback(async (file: File, filePassword?: string): Promise<{status: 'success' | 'needs-password' | 'error', data?: BackendResponse}> => {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    // Wrap in setTimeout to avoid setState during render
+    setTimeout(() => {
+      setUploadState({
+        status: 'error',
+        progress: 0,
+        fileName: file.name,
+        bank: null,
+        error: 'Only PDF files are accepted.',
+      });
+    }, 0);
+    return { status: 'error' };
+  }
 
-    if (file.size > 10 * 1024 * 1024) {
-      const errorMsg = 'This file exceeds the 10MB limit. Please upload a smaller PDF.';
-      setTimeout(() => {
-        setUploadState({
-          status: 'error',
-          progress: 0,
-          fileName: file.name,
-          bank: null,
-          error: errorMsg,
-        });
-      }, 0);
-      return { status: 'error', error: errorMsg };
+  if (file.size > 10 * 1024 * 1024) {
+    setTimeout(() => {
+      setUploadState({
+        status: 'error',
+        progress: 0,
+        fileName: file.name,
+        bank: null,
+        error: 'File size exceeds 10MB limit.',
+      });
+    }, 0);
+    return { status: 'error' };
+  }
+
+  setTimeout(() => {
+    setUploadState({
+      status: 'uploading',
+      progress: 10,
+      fileName: file.name,
+      bank: null,
+      error: null,
+    });
+  }, 0);
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('password', filePassword || '');
+
+  try {
+    setTimeout(() => {
+      setUploadState(prev => ({ ...prev, progress: 30 }));
+    }, 0);
+
+    // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    //   if (!API_BASE_URL) {
+    //     throw new Error("VITE_API_BASE_URL is not configured");
+    //   }
+
+    //   const response = await fetch(`${API_BASE_URL}/parse`, {
+    //     method: 'POST',
+    //     body: formData,
+    //   });
+
+    const response = await fetch('http://127.0.0.1:8000/parse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      
+
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 422 && 
+          (data.detail?.code === 'PASSWORD_REQUIRED' || data.detail?.message?.toLowerCase().includes('password'))) {
+        return { status: 'needs-password' };
+      }
+      throw new Error(data.detail?.message || 'Failed to parse statement');
     }
 
     setTimeout(() => {
-      setUploadState({
-        status: 'uploading',
-        progress: 10,
-        fileName: file.name,
-        bank: null,
-        error: null,
-      });
+      setUploadState(prev => ({ ...prev, status: 'parsing', progress: 70 }));
     }, 0);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('password', filePassword || '');
+    const enrichedData: BackendResponse = { ...data, fileName: file.name };
 
-    try {
-      setTimeout(() => {
-        setUploadState(prev => ({ ...prev, progress: 30 }));
-      }, 0);
+    setTimeout(() => {
+      setUploadState(prev => ({ 
+        ...prev, 
+        status: 'complete', 
+        progress: 100, 
+        bank: data.bank 
+      }));
+    }, 0);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return { status: 'success', data: enrichedData };
 
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-        if (!API_BASE_URL) {
-          throw new Error("VITE_API_BASE_URL is not configured");
-        }
-
-        const response = await fetch(`${API_BASE_URL}/parse`, {
-          method: 'POST',
-          body: formData,
-        });
-
-      // const response = await fetch('http://127.0.0.1:8000/parse', {
-      //   method: 'POST',
-      //   body: formData,
-      // });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 422 && 
-            (data.detail?.code === 'PASSWORD_REQUIRED' || data.detail?.message?.toLowerCase().includes('password'))) {
-          return { status: 'needs-password' };
-        }
-        // Specific error for unsupported banks/formats
-        throw new Error('Currently this file is not supported. Only SBI and South Indian Bank statements are supported.');
-      }
-
-      setTimeout(() => {
-        setUploadState(prev => ({ ...prev, status: 'parsing', progress: 70 }));
-      }, 0);
-
-      const enrichedData: BackendResponse = { ...data, fileName: file.name };
-
-      setTimeout(() => {
-        setUploadState(prev => ({ 
-          ...prev, 
-          status: 'complete', 
-          progress: 100, 
-          bank: data.bank 
-        }));
-      }, 0);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return { status: 'success', data: enrichedData };
-
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      const errorMsg = error.message || 'Server connection failed';
-      setTimeout(() => {
-        setUploadState(prev => ({
-          ...prev,
-          status: 'error',
-          progress: 0,
-          error: errorMsg,
-        }));
-      }, 0);
-      return { status: 'error', error: errorMsg };
-    }
-  }, [setUploadState]);
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    setTimeout(() => {
+      setUploadState(prev => ({
+        ...prev,
+        status: 'error',
+        progress: 0,
+        error: error.message || 'Server connection failed',
+      }));
+    }, 0);
+    return { status: 'error' };
+  }
+}, [setUploadState]);
 
   const processQueue = useCallback(async (startIndex: number = 0) => {
     setFileQueue(currentQueue => {
@@ -198,11 +198,7 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
             updatedQueue[i] = { ...updatedQueue[i], status: 'success', data: result.data };
             setFileQueue([...updatedQueue]);
           } else {
-            updatedQueue[i] = { 
-              ...updatedQueue[i], 
-              status: 'error', 
-              error: result.error || 'Failed to process' // Use the specific error from processFile
-            };
+            updatedQueue[i] = { ...updatedQueue[i], status: 'error', error: 'Failed to process' };
             setFileQueue([...updatedQueue]);
           }
         }
@@ -442,14 +438,7 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
                     <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0" />
                   )}
                   
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm truncate font-medium">{item.file.name}</span>
-                    {item.status === 'error' && item.error && (
-                      <span className="text-xs text-destructive truncate" title={item.error}>
-                        {item.error}
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-sm truncate">{item.file.name}</span>
                 </div>
 
                 {item.status === 'pending' && index !== currentFileIndex && (
