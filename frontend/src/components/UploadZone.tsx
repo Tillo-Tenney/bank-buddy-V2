@@ -46,8 +46,98 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
     }
   }, [fileQueue.length]);
 
+  useEffect(() => {
+  if (fileQueue.length === 0 && currentFileIndex !== -1) {
+    setCurrentFileIndex(-1);
+    setPasswordInput('');
+    setShowPassword(false);
+  }
+}, [fileQueue.length, currentFileIndex]);
+
+  // const processFile = useCallback(async (file: File, filePassword?: string): Promise<{status: 'success' | 'needs-password' | 'error', data?: BackendResponse}> => {
+  //   if (!file.name.toLowerCase().endsWith('.pdf')) {
+  //     setUploadState({
+  //       status: 'error',
+  //       progress: 0,
+  //       fileName: file.name,
+  //       bank: null,
+  //       error: 'Only PDF files are accepted.',
+  //     });
+  //     return { status: 'error' };
+  //   }
+
+  //   if (file.size > 10 * 1024 * 1024) {
+  //     setUploadState({
+  //       status: 'error',
+  //       progress: 0,
+  //       fileName: file.name,
+  //       bank: null,
+  //       error: 'File size exceeds 10MB limit.',
+  //     });
+  //     return { status: 'error' };
+  //   }
+
+  //   setUploadState({
+  //     status: 'uploading',
+  //     progress: 10,
+  //     fileName: file.name,
+  //     bank: null,
+  //     error: null,
+  //   });
+
+  //   const formData = new FormData();
+  //   formData.append('file', file);
+  //   formData.append('password', filePassword || '');
+
+  //   try {
+  //     setUploadState(prev => ({ ...prev, progress: 30 }));
+
+  //     const response = await fetch('http://127.0.0.1:8000/parse', {
+  //       method: 'POST',
+  //       body: formData,
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (!response.ok) {
+  //       if (response.status === 422 && 
+  //           (data.detail?.code === 'PASSWORD_REQUIRED' || data.detail?.message?.toLowerCase().includes('password'))) {
+  //         return { status: 'needs-password' };
+  //       }
+  //       throw new Error(data.detail?.message || 'Failed to parse statement');
+  //     }
+
+  //     setUploadState(prev => ({ ...prev, status: 'parsing', progress: 70 }));
+
+  //     const enrichedData: BackendResponse = { ...data, fileName: file.name };
+
+  //     setUploadState(prev => ({ 
+  //       ...prev, 
+  //       status: 'complete', 
+  //       progress: 100, 
+  //       bank: data.bank 
+  //     }));
+      
+  //     await new Promise(resolve => setTimeout(resolve, 500));
+      
+  //     return { status: 'success', data: enrichedData };
+
+  //   } catch (error: any) {
+  //     console.error("Upload error:", error);
+  //     setUploadState(prev => ({
+  //       ...prev,
+  //       status: 'error',
+  //       progress: 0,
+  //       error: error.message || 'Server connection failed',
+  //     }));
+  //     return { status: 'error' };
+  //   }
+  // }, [setUploadState]);
+
   const processFile = useCallback(async (file: File, filePassword?: string): Promise<{status: 'success' | 'needs-password' | 'error', data?: BackendResponse}> => {
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    // Wrap in setTimeout to avoid setState during render
+    setTimeout(() => {
       setUploadState({
         status: 'error',
         progress: 0,
@@ -55,10 +145,12 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
         bank: null,
         error: 'Only PDF files are accepted.',
       });
-      return { status: 'error' };
-    }
+    }, 0);
+    return { status: 'error' };
+  }
 
-    if (file.size > 10 * 1024 * 1024) {
+  if (file.size > 10 * 1024 * 1024) {
+    setTimeout(() => {
       setUploadState({
         status: 'error',
         progress: 0,
@@ -66,9 +158,11 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
         bank: null,
         error: 'File size exceeds 10MB limit.',
       });
-      return { status: 'error' };
-    }
+    }, 0);
+    return { status: 'error' };
+  }
 
+  setTimeout(() => {
     setUploadState({
       status: 'uploading',
       progress: 10,
@@ -76,55 +170,71 @@ export const UploadZone = ({ onUploadComplete, uploadState, setUploadState }: Up
       bank: null,
       error: null,
     });
+  }, 0);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('password', filePassword || '');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('password', filePassword || '');
 
-    try {
+  try {
+    setTimeout(() => {
       setUploadState(prev => ({ ...prev, progress: 30 }));
+    }, 0);
 
-      const response = await fetch('http://127.0.0.1:8000/parse', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+      if (!API_BASE_URL) {
+        throw new Error("VITE_API_BASE_URL is not configured");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/parse`, {
         method: 'POST',
         body: formData,
       });
 
-      const data = await response.json();
 
-      if (!response.ok) {
-        if (response.status === 422 && 
-            (data.detail?.code === 'PASSWORD_REQUIRED' || data.detail?.message?.toLowerCase().includes('password'))) {
-          return { status: 'needs-password' };
-        }
-        throw new Error(data.detail?.message || 'Failed to parse statement');
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 422 && 
+          (data.detail?.code === 'PASSWORD_REQUIRED' || data.detail?.message?.toLowerCase().includes('password'))) {
+        return { status: 'needs-password' };
       }
+      throw new Error(data.detail?.message || 'Failed to parse statement');
+    }
 
+    setTimeout(() => {
       setUploadState(prev => ({ ...prev, status: 'parsing', progress: 70 }));
+    }, 0);
 
-      const enrichedData: BackendResponse = { ...data, fileName: file.name };
+    const enrichedData: BackendResponse = { ...data, fileName: file.name };
 
+    setTimeout(() => {
       setUploadState(prev => ({ 
         ...prev, 
         status: 'complete', 
         progress: 100, 
         bank: data.bank 
       }));
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      return { status: 'success', data: enrichedData };
+    }, 0);
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return { status: 'success', data: enrichedData };
 
-    } catch (error: any) {
-      console.error("Upload error:", error);
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    setTimeout(() => {
       setUploadState(prev => ({
         ...prev,
         status: 'error',
         progress: 0,
         error: error.message || 'Server connection failed',
       }));
-      return { status: 'error' };
-    }
-  }, [setUploadState]);
+    }, 0);
+    return { status: 'error' };
+  }
+}, [setUploadState]);
 
   const processQueue = useCallback(async (startIndex: number = 0) => {
     setFileQueue(currentQueue => {

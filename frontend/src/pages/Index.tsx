@@ -441,6 +441,7 @@ const Index = () => {
                   transactions={transactions}
                   filterType={filterType}
                   onClearFilter={() => setFilterType(null)}
+                  onUpdateTransactions={setTransactions}
                 />
               </div>
             </div>
